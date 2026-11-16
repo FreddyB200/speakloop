@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "ItemKind": {
+      "enum": [
+        "grammar_pattern",
+        "phrase",
+        "word",
+        "sound"
+      ],
+      "title": "ItemKind",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "new",
+        "learning",
+        "mastered"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "back": {
+      "title": "Back",
+      "type": "string"
+    },
+    "examples": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Examples",
+      "type": "array"
+    },
+    "front": {
+      "title": "Front",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ItemKind"
+    },
+    "last_seen_session": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Seen Session"
+    },
+    "source_finding_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Finding Ids",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/ItemStatus",
+      "default": "new"
+    },
+    "uses_correct": {
+      "default": 0,
+      "title": "Uses Correct",
+      "type": "integer"
+    },
+    "uses_incorrect": {
+      "default": 0,
+      "title": "Uses Incorrect",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "key",
+    "front",
+    "back"
+  ],
+  "title": "Item",
+  "type": "object"
+}

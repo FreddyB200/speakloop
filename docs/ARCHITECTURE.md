@@ -31,6 +31,20 @@ A separate two-track recorder for macOS (Swift, milestone M5) is planned outside
 
 A local workspace (default `~/SpeakLoop/`, configurable) holds one folder per session (audio, transcript, metrics, audit, report) plus one SQLite database. None of it is ever versioned; `.gitignore` excludes `workspace/`, `sessions/`, `transcripts/`, databases and audio formats. Tests use synthetic fixtures only.
 
+## Data contracts
+
+The models in `src/speakloop/models.py` (pydantic, frozen, unknown fields rejected) are the contracts between modules. Times are float seconds from the start of the recording. JSON Schemas for `Session`, `Transcript`, `Metrics`, `Finding` and `Item` live in `docs/schemas/`; regenerate them with `uv run python scripts/export_schemas.py` (a test fails when they are out of date).
+
+Workspace layout (`SPEAKLOOP_HOME`, default `~/SpeakLoop`), managed by `speakloop.workspace.Workspace`:
+
+```
+sessions/<YYYYMMDD-HHMMSS-xxxx>/
+    session.json  transcript.json  metrics.json  findings.json  report.md
+items.db   (SQLite, managed by speakloop.items.store.ItemStore)
+```
+
+Files are written atomically (temp file in the same folder, then `os.replace`) and session ids are validated to prevent path traversal. Backends implement the protocols in `transcribe/base.py` and `audit/base.py`.
+
 ## Decision log
 
 - All repository documentation and code comments are in English.

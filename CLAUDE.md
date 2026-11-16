@@ -4,7 +4,7 @@ Guidance for AI agents working on SpeakLoop, a local-first speaking coach. See `
 
 ## Architecture map
 
-`src/speakloop/`: `cli.py` (Typer app), `transcribe`, `analyze`, `audit`, `items`, `export`, `practice`, `packs`. Most are empty placeholders for now. Tests live in `tests/`.
+`src/speakloop/`: `cli.py` (Typer app), `models.py` (pydantic data contracts), `workspace.py` (session folders of JSON files), `transcribe` (`base.py`: `TranscriptionBackend` protocol), `analyze`, `audit` (`base.py`: `AuditBackend` protocol), `items` (`store.py`: SQLite `ItemStore`), `export`, `practice`, `packs`. JSON Schemas of the models are generated into `docs/schemas/` by `scripts/export_schemas.py` (a test fails if they are stale). The remaining modules are empty placeholders for now. Tests live in `tests/`.
 
 ## Commands
 

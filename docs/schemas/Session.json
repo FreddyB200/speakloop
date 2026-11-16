@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "SessionKind": {
+      "enum": [
+        "discovery",
+        "pressure",
+        "deep_dive",
+        "think_aloud",
+        "behavioral",
+        "demo",
+        "free",
+        "shadowing",
+        "retell_432"
+      ],
+      "title": "SessionKind",
+      "type": "string"
+    },
+    "Track": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio Path"
+        },
+        "id": {
+          "enum": [
+            "mic",
+            "system"
+          ],
+          "title": "Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "speaker",
+            "interlocutor"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "role"
+      ],
+      "title": "Track",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^\\d{8}-\\d{6}-[0-9a-f]{4}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/SessionKind"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "scenario_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scenario Id"
+    },
+    "tracks": {
+      "items": {
+        "$ref": "#/$defs/Track"
+      },
+      "minItems": 1,
+      "title": "Tracks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "created_at",
+    "kind",
+    "tracks"
+  ],
+  "title": "Session",
+  "type": "object"
+}

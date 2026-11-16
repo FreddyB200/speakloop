@@ -1,0 +1,253 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "number"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "number"
+        },
+        "track": {
+          "enum": [
+            "mic",
+            "system"
+          ],
+          "title": "Track",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "quote",
+        "track"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "FdeMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "clarifying_questions_before_proposal": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Clarifying Questions Before Proposal"
+        },
+        "closed_with_next_steps": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closed With Next Steps"
+        },
+        "risky_commitments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Risky Commitments",
+          "type": "array"
+        },
+        "talk_ratio": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Talk Ratio"
+        }
+      },
+      "required": [
+        "clarifying_questions_before_proposal",
+        "talk_ratio",
+        "closed_with_next_steps"
+      ],
+      "title": "FdeMetrics",
+      "type": "object"
+    },
+    "Pause": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "number"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "Pause",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "duration_s": {
+      "minimum": 0,
+      "title": "Duration S",
+      "type": "number"
+    },
+    "false_starts": {
+      "minimum": 0,
+      "title": "False Starts",
+      "type": "integer"
+    },
+    "fde": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FdeMetrics"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "filler_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Filler Counts",
+      "type": "object"
+    },
+    "fillers_per_100w": {
+      "minimum": 0,
+      "title": "Fillers Per 100W",
+      "type": "number"
+    },
+    "long_pause_threshold_s": {
+      "exclusiveMinimum": 0,
+      "title": "Long Pause Threshold S",
+      "type": "number"
+    },
+    "long_pauses": {
+      "items": {
+        "$ref": "#/$defs/Pause"
+      },
+      "title": "Long Pauses",
+      "type": "array"
+    },
+    "mattr": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mattr"
+    },
+    "repetitions": {
+      "minimum": 0,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "response_latencies_s": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Response Latencies S"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "speaker_track": {
+      "enum": [
+        "mic",
+        "system"
+      ],
+      "title": "Speaker Track",
+      "type": "string"
+    },
+    "word_count": {
+      "minimum": 0,
+      "title": "Word Count",
+      "type": "integer"
+    },
+    "wpm_cv": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Wpm Cv"
+    },
+    "wpm_mean": {
+      "minimum": 0,
+      "title": "Wpm Mean",
+      "type": "number"
+    },
+    "wpm_windows": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Wpm Windows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "session_id",
+    "speaker_track",
+    "duration_s",
+    "word_count",
+    "wpm_mean",
+    "wpm_windows",
+    "wpm_cv",
+    "long_pause_threshold_s",
+    "long_pauses",
+    "filler_counts",
+    "fillers_per_100w",
+    "repetitions",
+    "false_starts",
+    "mattr",
+    "response_latencies_s"
+  ],
+  "title": "Metrics",
+  "type": "object"
+}

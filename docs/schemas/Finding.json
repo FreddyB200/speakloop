@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "number"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "number"
+        },
+        "track": {
+          "enum": [
+            "mic",
+            "system"
+          ],
+          "title": "Track",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "quote",
+        "track"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "FindingCategory": {
+      "enum": [
+        "grammar",
+        "vocabulary",
+        "naturalness",
+        "pronunciation",
+        "fluency",
+        "structure",
+        "technical_accuracy",
+        "customer_judgment"
+      ],
+      "title": "FindingCategory",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "category": {
+      "$ref": "#/$defs/FindingCategory"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "explanation": {
+      "title": "Explanation",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "severity": {
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "title": "Severity",
+      "type": "integer"
+    },
+    "source": {
+      "enum": [
+        "metrics",
+        "audit"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "suggestion": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Suggestion"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "session_id",
+    "category",
+    "title",
+    "explanation",
+    "suggestion",
+    "evidence",
+    "severity",
+    "source"
+  ],
+  "title": "Finding",
+  "type": "object"
+}
