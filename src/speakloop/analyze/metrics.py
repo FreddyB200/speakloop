@@ -49,6 +49,14 @@ RISKY_PHRASES: tuple[str, ...] = (
     "trivial",
 )
 
+# Phrases that are negative on their own: a preceding negation does not cancel them.
+NEGATIVE_RISKY_PHRASES: frozenset[str] = frozenset({"no problem"})
+NEGATION_WINDOW = 3
+NEGATION_TOKENS: frozenset[str] = frozenset(
+    {"not", "never", "no", "cannot", "can't", "won't", "don't", "doesn't", "wouldn't"}
+    | {"isn't", "aren't"}
+)
+
 NEXT_STEP_PHRASES: tuple[str, ...] = (
     "next steps",
     "next step",
@@ -119,6 +127,17 @@ def is_false_start(text: str) -> bool:
     return text.strip().endswith(_CUT_OFF_SUFFIXES)
 
 
+def is_standalone_dash(text: str) -> bool:
+    """True if the raw word text is only dash characters ("-", "\u2014", "\u2013")."""
+    stripped = text.strip()
+    return bool(stripped) and all(c in "-\u2014\u2013" for c in stripped)
+
+
+def is_negation(token: str) -> bool:
+    """True for a normalized token that negates ("not", "never", "can't", any "n't")."""
+    return token in NEGATION_TOKENS or token.endswith("n't")
+
+
 def find_phrases(tokens: Sequence[str], phrases: Iterable[str]) -> list[tuple[int, int, str]]:
     """Find non-overlapping phrase matches, scanning left to right, longest phrase first.
 
@@ -178,12 +197,35 @@ def count_repetitions(
 
 
 def count_false_starts(words: Iterable[Word]) -> int:
-    """Count words ending in "-" or "—", which Whisper uses for cut-off words ("wh-").
+    """Count abandoned starts, in two forms Whisper uses.
 
-    Heuristic: it depends on the transcription backend marking cut-offs; a backend that
-    silently drops or completes them yields 0. A normal hyphen at the end of a word is rare.
+    1. A word whose raw text ends with "-", "\u2014" or "\u2013" ("wh-", "we\u2014").
+    2. A standalone dash token between two words ("I - I don't know"). It needs a real
+       word on both sides, so a dash at the very start or end of the speech is not counted,
+       and it is skipped when the previous word already ends with a dash (same abandoned
+       start, counted once). A token that merely starts with a dash ("tele -transported")
+       is a hyphenation artifact and is never counted.
+
+    Pass ALL words of the speaker, including punctuation-only ones: standalone dashes
+    carry no text after normalization. Heuristic: it depends on the transcription backend
+    marking cut-offs; a backend that silently drops or completes them yields 0. A stray
+    dash used as a plain pause or aside ("the plan - which is fine") is counted too.
     """
-    return sum(1 for w in words if is_false_start(w.text))
+    ordered = list(words)
+    total = 0
+    for i, word in enumerate(ordered):
+        if is_standalone_dash(word.text):
+            if 0 < i < len(ordered) - 1:
+                prev, nxt = ordered[i - 1], ordered[i + 1]
+                if (
+                    normalize_token(prev.text)
+                    and normalize_token(nxt.text)
+                    and not is_false_start(prev.text)
+                ):
+                    total += 1
+        elif is_false_start(word.text):
+            total += 1
+    return total
 
 
 def mattr(tokens: Sequence[str], window: int = MATTR_WINDOW) -> float | None:
@@ -355,10 +397,18 @@ def risky_commitments(
 
     Each match becomes an `Evidence` whose quote is the matched words exactly as written in
     the transcript, joined with spaces, with start/end taken from those words. Limit: purely
-    lexical, so "I can't guarantee" or "not trivial" are flagged too; the audit judges context.
+    lexical with one guard: a match is skipped when a negation ("not", "never", "no",
+    "cannot", or any "n't" contraction) appears within the 3 tokens BEFORE it, so "I can't
+    guarantee" and "it is not trivial" are not flagged. Phrases that are negative themselves
+    ("no problem") are exempt from the guard. Negation AFTER the phrase is not seen, so "I
+    definitely can't promise" still flags "definitely"; sarcasm and longer-range negation
+    are missed. The audit judges context.
     """
     found: list[Evidence] = []
-    for start, end, _ in find_phrases(tokens, phrases):
+    for start, end, phrase in find_phrases(tokens, phrases):
+        window = tokens[max(0, start - NEGATION_WINDOW) : start]
+        if phrase not in NEGATIVE_RISKY_PHRASES and any(is_negation(t) for t in window):
+            continue
         matched = speaker_words[start:end]
         quote = " ".join(w.text.strip() for w in matched)
         found.append(
@@ -377,7 +427,9 @@ def closed_with_next_steps(
 
     The tail is every speaker word starting at or after (last word end - tail_s). None if the
     speaker said nothing. Heuristic: wording only; a closing that proposes a concrete next
-    step in other words is missed, and the audit may refine it later.
+    step in other words is missed, and the audit may refine it later. Negation is NOT
+    handled on purpose: "don't forget to follow up" is a real next step, so skipping
+    phrases after a negation would cause more misses than it removes.
     """
     if not speaker_words:
         return None
@@ -456,7 +508,7 @@ def compute_metrics(
         filler_counts=filler_counts,
         fillers_per_100w=sum(filler_counts.values()) / word_count * 100 if word_count else 0.0,
         repetitions=count_repetitions(tokens, filler_idx),
-        false_starts=count_false_starts(words),
+        false_starts=count_false_starts(transcript.words(speaker.id)),
         mattr=mattr(content),
         response_latencies_s=response_latencies(words, other_words) if other is not None else None,
         fde=fde,

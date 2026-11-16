@@ -481,10 +481,78 @@ def test_closed_with_next_steps_end_to_end() -> None:
 def test_punctuation_only_words_ignored() -> None:
     m = solo([w("Hello", 0, 0.5), w("—", 0.5, 0.6), w("world", 0.6, 1.0)])
     assert m.word_count == 2
-    assert m.false_starts == 0
+    # The standalone dash is ignored as a word but counts as an abandoned start.
+    assert m.false_starts == 1
+    assert solo([w("Hello", 0, 0.5), w("\u2014", 0.5, 0.6)]).false_starts == 0
 
 
 def test_deterministic() -> None:
     words = say("um the the plan is definitely fine you know", 0.0)
     t, s = transcript(words), session()
     assert compute_metrics(t, s) == compute_metrics(t, s)
+
+
+# ---------- standalone dashes and negation ----------
+
+
+def _fs(text: str) -> int:
+    return count_false_starts(say(text, 0.0))
+
+
+def test_false_start_standalone_dash_between_words() -> None:
+    assert _fs("I - I don't know") == 1
+    assert _fs("the \u2014 like the bus") == 1
+    assert _fs("We \u2013 which are provided") == 1
+    assert _fs("I - I the - like the bus") == 2
+
+
+def test_false_start_dash_not_between_words() -> None:
+    assert _fs("tele -transported") == 0
+    assert _fs("- I know") == 0
+    assert _fs("I know -") == 0
+    assert _fs("-") == 0
+    assert _fs("I - - know") == 0
+
+
+def test_false_start_not_counted_twice() -> None:
+    assert _fs("wh- - what") == 1
+    assert _fs("wh- what we - I") == 2
+
+
+def test_false_start_standalone_dash_in_compute_metrics() -> None:
+    m = solo(say("I - I don't know the - like the bus", 0.0))
+    assert m.false_starts == 2
+    assert m.word_count == 8
+
+
+def _risky(text: str) -> list[str]:
+    m = solo(say(text, 0.0))
+    assert m.fde is not None
+    return [e.quote for e in m.fde.risky_commitments]
+
+
+def test_risky_skipped_after_negation() -> None:
+    assert _risky("I can't guarantee that") == []
+    assert _risky("it is not trivial") == []
+    assert _risky("we never ship late but i promise") == ["i promise"]
+    assert _risky("it isn't definitely safe") == []
+    assert _risky("we don\u2019t guarantee it") == []
+    assert _risky("no way it absolutely works") == []
+
+
+def test_risky_negation_window_and_exemption() -> None:
+    assert _risky("no problem") == ["no problem"]
+    assert _risky("I can't say no problem") == ["no problem"]
+    # Negation more than 3 tokens before the phrase does not cancel it.
+    assert _risky("not that I think we can guarantee it") == ["guarantee"]
+    assert _risky("I can guarantee that") == ["guarantee"]
+
+
+def test_risky_negation_after_phrase_is_not_seen() -> None:
+    assert _risky("I definitely can't promise") == ["definitely"]
+
+
+def test_next_steps_ignores_negation() -> None:
+    words = say("don't forget to follow up", 0.0)
+    tokens = [normalize_token(x.text) for x in words]
+    assert closed_with_next_steps(words, tokens) is True
