@@ -48,3 +48,26 @@ def test_tilde_is_expanded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("HOME", str(tmp_path))
     path = export_to_folder("x", SESSION, Path("~/notes"))
     assert path.parent == tmp_path / "notes"
+
+
+def test_replace_overwrites_existing_export(tmp_path: Path) -> None:
+    first = export_to_folder("one", SESSION, tmp_path)
+    second = export_to_folder("two", SESSION, tmp_path, replace=True)
+    assert second == first
+    assert first.read_text() == "two"
+    assert len(list(tmp_path.iterdir())) == 1
+
+
+def test_replace_creates_when_missing(tmp_path: Path) -> None:
+    path = export_to_folder("one", SESSION, tmp_path / "new", replace=True)
+    assert path.read_text() == "one"
+
+
+def test_replace_matches_renamed_file_by_session_id(tmp_path: Path) -> None:
+    renamed = tmp_path / "my notes 20260105-093000-a1b2.md"
+    renamed.write_text("old")
+    other = tmp_path / "x 20260105-093000-ffff.md"
+    other.write_text("other")
+    assert export_to_folder("new", SESSION, tmp_path, replace=True) == renamed
+    assert renamed.read_text() == "new"
+    assert other.read_text() == "other"

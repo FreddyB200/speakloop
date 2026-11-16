@@ -13,6 +13,7 @@ from speakloop.audit.base import AuditBackend, AuditBackendError
 from speakloop.audit.claude_code import ClaudeCodeBackend
 from speakloop.audit.rubric import RubricError, load_rubric
 from speakloop.export.obsidian import export_to_folder
+from speakloop.export.report import render_report
 from speakloop.models import SessionKind
 from speakloop.pipeline import DEFAULT_TRANSCRIPTION_PROMPT, PipelineError, run_session
 from speakloop.transcribe.base import TranscriptionBackend, TranscriptionError
@@ -87,6 +88,13 @@ def make_auditor() -> AuditBackend:
     return ClaudeCodeBackend()
 
 
+def _export_dir(option: Path | None) -> Path | None:
+    if option is not None:
+        return option
+    env = os.environ.get(OBSIDIAN_ENV_VAR)
+    return Path(env) if env else None
+
+
 def _fail(message: str) -> typer.Exit:
     typer.echo(f"error: {message}", err=True)
     return typer.Exit(code=1)
@@ -109,6 +117,14 @@ def audit(
     model_size: Annotated[
         str, typer.Option("--model-size", help="Whisper model size.")
     ] = "small.en",
+    glossary: Annotated[
+        str | None,
+        typer.Option(
+            "--glossary",
+            help="Comma-separated names and terms to help transcription "
+            "(added to <workspace>/glossary.txt).",
+        ),
+    ] = None,
     no_audit: Annotated[
         bool, typer.Option("--no-audit", help="Skip the AI audit (transcript and metrics only).")
     ] = False,
@@ -127,9 +143,13 @@ def audit(
         if path is not None and not path.expanduser().is_file():
             raise _fail(f"{label} file not found: {path}")
     workspace = Workspace(workspace_path.expanduser()) if workspace_path else Workspace.default()
-    export_dir = obsidian_dir
-    if export_dir is None and os.environ.get(OBSIDIAN_ENV_VAR):
-        export_dir = Path(os.environ[OBSIDIAN_ENV_VAR])
+    export_dir = _export_dir(obsidian_dir)
+    try:
+        terms = workspace.load_glossary()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise _fail(f"cannot read glossary file {workspace.glossary_path}: {exc}") from exc
+    if glossary:
+        terms += [t.strip() for t in glossary.split(",") if t.strip()]
     try:
         rubric = load_rubric()
     except RubricError as exc:
@@ -147,6 +167,7 @@ def audit(
             rubric=rubric,
             language=language,
             prompt=None if no_prompt else DEFAULT_TRANSCRIPTION_PROMPT,
+            glossary=terms,
         )
     except (PipelineError, AuditBackendError, TranscriptionError) as exc:
         raise _fail(str(exc)) from exc
@@ -175,3 +196,49 @@ def audit(
         failed = True
     if failed:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def report(
+    session_id: Annotated[str, typer.Argument(help="Session id, e.g. 20260105-093000-a1b2.")],
+    workspace_path: Annotated[
+        Path | None, typer.Option("--workspace", help="Workspace folder.")
+    ] = None,
+    obsidian_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--obsidian-dir",
+            help=f"Replace the exported report in this folder (env {OBSIDIAN_ENV_VAR}).",
+        ),
+    ] = None,
+    no_transcript: Annotated[
+        bool, typer.Option("--no-transcript", help="Leave the transcript section out.")
+    ] = False,
+) -> None:
+    """Re-render the report of a saved session, optionally replacing its exported copy."""
+    workspace = Workspace(workspace_path.expanduser()) if workspace_path else Workspace.default()
+    if not workspace.has_session(session_id):
+        raise _fail(f"unknown session id {session_id!r} in workspace {workspace.root}")
+    try:
+        session = workspace.load_session(session_id)
+        transcript = workspace.load_transcript(session_id)
+        metrics = workspace.load_metrics(session_id)
+        findings = workspace.load_findings(session_id)
+        saved_audit = workspace.load_audit(session_id)
+    except (OSError, ValueError) as exc:
+        raise _fail(f"cannot load session {session_id}: {exc}") from exc
+    text = render_report(
+        session,
+        metrics,
+        findings,
+        summary=saved_audit.summary if saved_audit else None,
+        next_session_goal=saved_audit.next_session_goal if saved_audit else None,
+        transcript=None if no_transcript else transcript,
+    )
+    typer.echo(f"report: {workspace.save_report(session_id, text)}")
+    export_dir = _export_dir(obsidian_dir)
+    if export_dir is not None:
+        try:
+            typer.echo(f"exported: {export_to_folder(text, session, export_dir, replace=True)}")
+        except (OSError, ValueError) as exc:
+            raise _fail(f"export failed: {exc}") from exc

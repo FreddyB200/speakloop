@@ -19,9 +19,11 @@ from speakloop.models import (
     FindingCategory,
     Metrics,
     Pause,
+    Segment,
     Session,
     SessionKind,
     Track,
+    Transcript,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "export"
@@ -103,6 +105,25 @@ def _fde() -> FdeMetrics:
     )
 
 
+def _transcript(prompt: str | None = "Um, uh.") -> Transcript:
+    def seg(text: str, start: float, track: str) -> Segment:
+        return Segment(text=text, start=start, end=start + 2, track=track)  # type: ignore[arg-type]
+
+    return Transcript(
+        session_id=SID,
+        language="en",
+        backend="fasterwhisper",
+        model="small.en",
+        prompt=prompt,
+        segments=(
+            seg("We call the *API* daily.", 3.4, "mic"),
+            seg("Tell me more.", 12.0, "system"),
+            seg("Late talk.", 3723.0, "mic"),
+            seg("   ", 20.0, "mic"),
+        ),
+    )
+
+
 def _check_snapshot(name: str, text: str) -> None:
     path = FIXTURES / name
     if os.environ.get("UPDATE_SNAPSHOTS") == "1":
@@ -136,6 +157,39 @@ def test_snapshot_two_track_fde() -> None:
         next_session_goal="Ask two more questions before proposing.",
     )
     _check_snapshot("two_track_fde.md", text)
+
+
+def test_snapshot_transcript_section() -> None:
+    text = render_report(
+        _session(True, SessionKind.DISCOVERY),
+        _metrics(_fde()),
+        _findings()[:1],
+        summary="Short.",
+        next_session_goal="Ask more.",
+        transcript=_transcript(),
+    )
+    _check_snapshot("two_track_transcript.md", text)
+
+
+def test_transcript_section_content() -> None:
+    text = render_report(_session(False), _metrics(None), [], transcript=_transcript())
+    assert text.rstrip().split("\n\n")[-2] == "## Transcript"
+    assert "> [!quote]- Transcript as recognized (fasterwhisper:small.en)" in text
+    assert "> **[00:03]** We call the \\*API\\* daily." in text
+    assert "other speaker" not in text  # single track: no interlocutor marker
+    assert "> **[1:02:03]** Late talk." in text
+    assert "> *Initial prompt: Um, uh.*" in text
+    assert text.index("[00:03]") < text.index("[00:12]") < text.index("[1:02:03]")
+
+
+def test_transcript_marks_interlocutor_and_no_prompt() -> None:
+    text = render_report(_session(True), _metrics(_fde()), [], transcript=_transcript(prompt=None))
+    assert "> **[00:12]** *(other speaker)* Tell me more." in text
+    assert "Initial prompt" not in text
+
+
+def test_no_transcript_section_by_default() -> None:
+    assert "## Transcript" not in render_report(_session(False), _metrics(None), [])
 
 
 def test_front_matter_values_and_nulls() -> None:

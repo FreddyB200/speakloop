@@ -86,7 +86,13 @@ uv run speakloop doctor
 uv run speakloop audit session.m4a --kind discovery
 ```
 
-`doctor` checks that `claude`, Buzz and the workspace folder (`~/SpeakLoop`, or `$SPEAKLOOP_HOME`) are usable. `audit` writes the session files and a Markdown `report.md` under `sessions/<id>/` and prints a short summary. Useful options: `--system other.m4a` (the other side of the call as a second track), `--no-audit` (transcript and metrics only), `--obsidian-dir PATH` (or `SPEAKLOOP_OBSIDIAN_DIR`) to also copy the report to a folder. See `speakloop audit --help`.
+`doctor` checks that `claude`, Buzz and the workspace folder (`~/SpeakLoop`, or `$SPEAKLOOP_HOME`) are usable. `audit` writes the session files and a Markdown `report.md` under `sessions/<id>/` and prints a short summary. Useful options: `--system other.m4a` (the other side of the call as a second track), `--no-audit` (transcript and metrics only), `--obsidian-dir PATH` (or `SPEAKLOOP_OBSIDIAN_DIR`) to also copy the report to a folder. `--glossary "TransMilenio, Datos Abiertos"` (and an optional `glossary.txt` in the workspace, one term per line) teaches the transcriber your names. The report ends with a collapsed transcript. To re-render a report later, and replace its copy in Obsidian instead of creating a duplicate:
+
+```
+uv run speakloop report SESSION_ID --obsidian-dir ~/Vault/SpeakLoop
+```
+
+See `speakloop audit --help` and `speakloop report --help`.
 
 ## License
 

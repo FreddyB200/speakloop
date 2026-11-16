@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "description": "Outcome of the AI audit besides the findings, saved so reports can be re-rendered.",
+  "properties": {
+    "discarded_findings": {
+      "minimum": 0,
+      "title": "Discarded Findings",
+      "type": "integer"
+    },
+    "dropped_quotes": {
+      "minimum": 0,
+      "title": "Dropped Quotes",
+      "type": "integer"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Error"
+    },
+    "next_session_goal": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Session Goal"
+    },
+    "proposal_time_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Proposal Time S"
+    },
+    "rubric_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rubric Version"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Summary"
+    }
+  },
+  "required": [
+    "summary",
+    "next_session_goal",
+    "proposal_time_s",
+    "dropped_quotes",
+    "discarded_findings",
+    "rubric_version",
+    "error"
+  ],
+  "title": "AuditSummary",
+  "type": "object"
+}

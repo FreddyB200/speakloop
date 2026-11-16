@@ -2,7 +2,9 @@
 
 Layout under the root (default `~/SpeakLoop`, or `$SPEAKLOOP_HOME`):
 
-    sessions/<session_id>/{session,transcript,metrics,findings}.json and report.md
+    sessions/<session_id>/{session,transcript,metrics,findings}.json, report.md and an
+    optional audit.json
+    glossary.txt (optional, one term per line, `#` comments)
 """
 
 import contextlib
@@ -13,7 +15,14 @@ from pathlib import Path
 
 from pydantic import BaseModel, TypeAdapter
 
-from speakloop.models import Finding, Metrics, Session, Transcript, is_valid_session_id
+from speakloop.models import (
+    AuditSummary,
+    Finding,
+    Metrics,
+    Session,
+    Transcript,
+    is_valid_session_id,
+)
 
 _FINDINGS = TypeAdapter(tuple[Finding, ...])
 
@@ -100,3 +109,36 @@ class Workspace:
 
     def load_findings(self, session_id: str) -> list[Finding]:
         return list(_FINDINGS.validate_json(self._read(session_id, "findings.json")))
+
+    def save_audit(self, session_id: str, audit: AuditSummary) -> Path:
+        return self._save_model(session_id, "audit.json", audit)
+
+    def load_audit(self, session_id: str) -> AuditSummary | None:
+        """Load the saved audit outcome, or None if the session has none."""
+        try:
+            return AuditSummary.model_validate_json(self._read(session_id, "audit.json"))
+        except FileNotFoundError:
+            return None
+
+    def has_session(self, session_id: str) -> bool:
+        return (
+            is_valid_session_id(session_id)
+            and (self.session_dir(session_id) / "session.json").is_file()
+        )
+
+    @property
+    def glossary_path(self) -> Path:
+        return self.root / "glossary.txt"
+
+    def load_glossary(self) -> list[str]:
+        """Personal terms from `glossary.txt` (one per line, `#` comments); [] if missing."""
+        try:
+            text = self.glossary_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return []
+        terms: list[str] = []
+        for line in text.splitlines():
+            term = line.split("#", 1)[0].strip()
+            if term:
+                terms.append(term)
+        return terms

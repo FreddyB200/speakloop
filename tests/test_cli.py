@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 from speakloop import __version__, cli
 from speakloop.cli import app
 from speakloop.transcribe import FakeBackend
+from speakloop.workspace import Workspace
 from tests.test_pipeline import SPEAKER_TEXT, FakeAuditor, canned, words
 
 runner = CliRunner()
@@ -196,3 +197,89 @@ def test_workspace_option(audio: Path, tmp_path: Path, fakes: FakeAuditor) -> No
     result = runner.invoke(app, ["audit", str(audio), "--workspace", str(ws)])
     assert result.exit_code == 0, result.output
     assert len(list(ws.glob("sessions/*/report.md"))) == 1
+
+
+def _audited_session(home: Path, audio: Path) -> str:
+    result = runner.invoke(app, ["audit", str(audio)])
+    assert result.exit_code == 0, result.output
+    return next(home.glob("sessions/*")).name
+
+
+def test_audit_glossary_option_and_file(
+    home: Path, audio: Path, fakes: FakeAuditor, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home.mkdir(parents=True)
+    (home / "glossary.txt").write_text("# c\nTransMilenio\n", encoding="utf-8")
+    result = runner.invoke(app, ["audit", str(audio), "--glossary", "Datos Abiertos, Bogota"])
+    assert result.exit_code == 0, result.output
+    sid = next(home.glob("sessions/*")).name
+    prompt = Workspace(home).load_transcript(sid).prompt
+    assert prompt is not None
+    assert prompt.endswith("Names and terms: TransMilenio, Datos Abiertos, Bogota.")
+
+
+def test_audit_no_prompt_ignores_glossary(home: Path, audio: Path, fakes: FakeAuditor) -> None:
+    result = runner.invoke(app, ["audit", str(audio), "--no-prompt", "--glossary", "X"])
+    assert result.exit_code == 0, result.output
+    sid = next(home.glob("sessions/*")).name
+    assert Workspace(home).load_transcript(sid).prompt is None
+
+
+def test_report_rerenders_with_audit(home: Path, audio: Path, fakes: FakeAuditor) -> None:
+    sid = _audited_session(home, audio)
+    report_file = home / "sessions" / sid / "report.md"
+    report_file.write_text("stale")
+    result = runner.invoke(app, ["report", sid])
+    assert result.exit_code == 0, result.output
+    text = report_file.read_text(encoding="utf-8")
+    assert "Good session." in text
+    assert "Ask more questions." in text
+    assert "## Transcript" in text
+
+
+def test_report_no_transcript(home: Path, audio: Path, fakes: FakeAuditor) -> None:
+    sid = _audited_session(home, audio)
+    result = runner.invoke(app, ["report", sid, "--no-transcript"])
+    assert result.exit_code == 0, result.output
+    assert "## Transcript" not in (home / "sessions" / sid / "report.md").read_text()
+
+
+def test_report_without_audit_json(home: Path, audio: Path, fakes: FakeAuditor) -> None:
+    sid = _audited_session(home, audio)
+    (home / "sessions" / sid / "audit.json").unlink()
+    result = runner.invoke(app, ["report", sid])
+    assert result.exit_code == 0, result.output
+    assert "No goal set." in (home / "sessions" / sid / "report.md").read_text()
+
+
+def test_report_replaces_exported_file(
+    home: Path, audio: Path, tmp_path: Path, fakes: FakeAuditor
+) -> None:
+    vault = tmp_path / "vault"
+    result = runner.invoke(app, ["audit", str(audio), "--obsidian-dir", str(vault)])
+    assert result.exit_code == 0, result.output
+    sid = next(home.glob("sessions/*")).name
+    (exported,) = vault.glob("*.md")
+    exported.write_text("old")
+    result = runner.invoke(app, ["report", sid, "--obsidian-dir", str(vault)])
+    assert result.exit_code == 0, result.output
+    assert list(vault.glob("*.md")) == [exported]
+    assert "## Transcript" in exported.read_text(encoding="utf-8")
+
+
+def test_report_obsidian_env(
+    home: Path, audio: Path, tmp_path: Path, fakes: FakeAuditor, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sid = _audited_session(home, audio)
+    vault = tmp_path / "vault-env"
+    monkeypatch.setenv("SPEAKLOOP_OBSIDIAN_DIR", str(vault))
+    result = runner.invoke(app, ["report", sid])
+    assert result.exit_code == 0, result.output
+    assert len(list(vault.glob("*.md"))) == 1
+
+
+@pytest.mark.parametrize("bad", ["20260105-093000-a1b2", "../etc", "nope"])
+def test_report_unknown_session(home: Path, bad: str) -> None:
+    result = runner.invoke(app, ["report", bad])
+    assert result.exit_code == 1
+    assert "unknown session id" in result.output

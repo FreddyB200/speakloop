@@ -88,3 +88,32 @@ def test_save_report_is_atomic_and_overwrites(tmp_path: Path) -> None:
     assert path == ws.report_path(SID)
     assert path.read_text(encoding="utf-8") == "two\n"
     assert [p.name for p in path.parent.iterdir()] == ["report.md"]
+
+
+def test_audit_roundtrip_and_missing(tmp_path: Path) -> None:
+    from speakloop.models import AuditSummary
+
+    ws = Workspace(tmp_path)
+    sid = "20260105-093000-a1b2"
+    assert ws.load_audit(sid) is None
+    audit = AuditSummary(
+        summary="s",
+        next_session_goal=None,
+        proposal_time_s=12.5,
+        dropped_quotes=1,
+        discarded_findings=2,
+        rubric_version="1",
+        error=None,
+    )
+    path = ws.save_audit(sid, audit)
+    assert path.name == "audit.json"
+    assert ws.load_audit(sid) == audit
+
+
+def test_glossary_file(tmp_path: Path) -> None:
+    ws = Workspace(tmp_path)
+    assert ws.load_glossary() == []
+    ws.glossary_path.write_text(
+        "# my terms\nTransMilenio\n\n  Datos Abiertos  # open data\n", encoding="utf-8"
+    )
+    assert ws.load_glossary() == ["TransMilenio", "Datos Abiertos"]

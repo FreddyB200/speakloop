@@ -11,6 +11,7 @@ from speakloop.models import SessionKind, Transcript
 from speakloop.pipeline import (
     DEFAULT_TRANSCRIPTION_PROMPT,
     PipelineError,
+    build_transcription_prompt,
     merge_transcripts,
     run_session,
 )
@@ -190,3 +191,50 @@ def test_merge_transcripts() -> None:
     assert len(merged.segments) == 2
     with pytest.raises(ValueError):
         merge_transcripts("20260102-093000-abcd")
+
+
+def test_prompt_with_glossary(tmp_path: Path) -> None:
+    result = run(tmp_path, glossary=["TransMilenio", "Datos Abiertos"])
+    assert result.transcript.prompt == (
+        DEFAULT_TRANSCRIPTION_PROMPT + " Names and terms: TransMilenio, Datos Abiertos."
+    )
+
+
+def test_glossary_not_applied_without_prompt_or_terms(tmp_path: Path) -> None:
+    assert run(tmp_path, prompt=None, glossary=["X"]).transcript.prompt is None
+    assert run(tmp_path, glossary=[]).transcript.prompt == DEFAULT_TRANSCRIPTION_PROMPT
+
+
+def test_glossary_truncated_with_warning(caplog: pytest.LogCaptureFixture) -> None:
+    terms = [f"Term{i:03d}" for i in range(200)]
+    with caplog.at_level("WARNING"):
+        prompt = build_transcription_prompt(DEFAULT_TRANSCRIPTION_PROMPT, terms)
+    assert len(prompt) <= 800
+    assert prompt.startswith(DEFAULT_TRANSCRIPTION_PROMPT + " Names and terms: Term000, Term001")
+    assert prompt.endswith(".")
+    assert "glossary truncated" in caplog.text
+
+
+def test_saves_audit_and_transcript_in_report(tmp_path: Path) -> None:
+    ws = Workspace(tmp_path / "ws")
+    result = run(tmp_path, workspace=ws, auditor=FakeAuditor(canned()))
+    audit = ws.load_audit(result.session.id)
+    assert audit is not None
+    assert audit.summary == "Good session."
+    assert audit.next_session_goal == "Ask more questions."
+    assert audit.dropped_quotes == 1
+    assert audit.discarded_findings == 1
+    assert audit.rubric_version and audit.error is None
+    assert audit.proposal_time_s is not None
+    assert "## Transcript" in result.report_path.read_text(encoding="utf-8")
+
+
+def test_audit_error_and_no_audit_persistence(tmp_path: Path) -> None:
+    ws = Workspace(tmp_path / "ws")
+    failed = run(tmp_path, workspace=ws, auditor=FakeAuditor(fail=True))
+    saved = ws.load_audit(failed.session.id)
+    assert saved is not None
+    assert saved.error is not None and "boom" in saved.error
+    assert saved.summary is None
+    skipped = run(tmp_path, workspace=ws)
+    assert ws.load_audit(skipped.session.id) is None

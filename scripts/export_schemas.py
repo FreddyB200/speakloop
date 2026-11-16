@@ -5,9 +5,16 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from speakloop.models import Finding, Item, Metrics, Session, Transcript
+from speakloop.models import AuditSummary, Finding, Item, Metrics, Session, Transcript
 
-MODELS: tuple[type[BaseModel], ...] = (Session, Transcript, Metrics, Finding, Item)
+MODELS: tuple[type[BaseModel], ...] = (
+    Session,
+    Transcript,
+    Metrics,
+    Finding,
+    Item,
+    AuditSummary,
+)
 SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "docs" / "schemas"
 
 

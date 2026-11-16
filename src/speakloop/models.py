@@ -204,6 +204,18 @@ class Finding(_Frozen):
     source: Literal["metrics", "audit"]
 
 
+class AuditSummary(_Frozen):
+    """Outcome of the AI audit besides the findings, saved so reports can be re-rendered."""
+
+    summary: str | None
+    next_session_goal: str | None
+    proposal_time_s: float | None
+    dropped_quotes: int = Field(ge=0)
+    discarded_findings: int = Field(ge=0)
+    rubric_version: str | None
+    error: str | None
+
+
 class ItemKind(StrEnum):
     GRAMMAR_PATTERN = "grammar_pattern"
     PHRASE = "phrase"

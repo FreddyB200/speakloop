@@ -15,7 +15,7 @@ Transcript --> compute_metrics --> Metrics (no proposal time yet)
 verified quotes + first proposal time --> compute_metrics again (clarifying questions)
    |
    v
-workspace: session.json transcript.json metrics.json findings.json report.md
+workspace: session.json transcript.json metrics.json findings.json [audit.json] report.md
    |
    +--> optional export to an Obsidian folder (never overwrites)
 ```
@@ -53,13 +53,14 @@ A local workspace (default `~/SpeakLoop/`, configurable) holds one folder per se
 
 ## Data contracts
 
-The models in `src/speakloop/models.py` (pydantic, frozen, unknown fields rejected) are the contracts between modules. Times are float seconds from the start of the recording. JSON Schemas for `Session`, `Transcript`, `Metrics`, `Finding` and `Item` live in `docs/schemas/`; regenerate them with `uv run python scripts/export_schemas.py` (a test fails when they are out of date).
+The models in `src/speakloop/models.py` (pydantic, frozen, unknown fields rejected) are the contracts between modules. Times are float seconds from the start of the recording. JSON Schemas for `Session`, `Transcript`, `Metrics`, `Finding` and `Item` and `AuditSummary` live in `docs/schemas/`; regenerate them with `uv run python scripts/export_schemas.py` (a test fails when they are out of date).
 
 Workspace layout (`SPEAKLOOP_HOME`, default `~/SpeakLoop`), managed by `speakloop.workspace.Workspace`:
 
 ```
 sessions/<YYYYMMDD-HHMMSS-xxxx>/
-    session.json  transcript.json  metrics.json  findings.json  report.md
+    session.json  transcript.json  metrics.json  findings.json  audit.json  report.md
+glossary.txt   (optional personal terms, see Transcription)
 items.db   (SQLite, managed by speakloop.items.store.ItemStore)
 ```
 
@@ -113,3 +114,10 @@ The report is Markdown with YAML front matter. The front matter keys (`type`, `d
 - Anki integration goes through AnkiConnect (the local Anki add-on API), with deterministic, tested sync code. An MCP bridge may be added later as an optional conversational layer.
 - Python 3.12, packaged with uv, src layout, CLI named `speakloop`.
 - Runtime dependencies are kept minimal (`typer`, `pydantic`); new ones need explicit approval.
+
+## Transcript section, audit.json and `speakloop report`
+
+- `render_report(..., transcript=...)` appends a final `## Transcript` section: a collapsed Obsidian callout (`> [!quote]- Transcript as recognized (<backend>:<model>)`, a plain blockquote on GitHub) with one `**[mm:ss]** text` line per segment in time order (`h:mm:ss` over an hour), the other side of a two-track call marked `*(other speaker)*`, and a last line with the initial prompt in italics. The pipeline always passes the transcript; the front matter is unchanged.
+- The audit outcome that is not a finding is saved as `audit.json` (`AuditSummary`: summary, next session goal, proposal time, dropped quotes, discarded findings, rubric version, error). It is written whenever an auditor ran (also when it failed, with `error` set) and is absent with `--no-audit`; `Workspace.load_audit` returns None if missing.
+- `speakloop report SESSION_ID [--workspace PATH] [--obsidian-dir PATH] [--no-transcript]` re-renders `report.md` from the saved files (audit.json optional) and, when an Obsidian folder is given (option or `SPEAKLOOP_OBSIDIAN_DIR`), calls `export_to_folder(..., replace=True)`: an existing file whose name ends with `<session_id>.md` is replaced atomically, otherwise a new file is created. The default `replace=False` never overwrites. Unknown or malformed session ids fail with a clear error.
+- Personal glossary: `speakloop audit --glossary "TransMilenio, Datos Abiertos"` and the optional `<workspace>/glossary.txt` (one term per line, `#` comments) are merged and appended to the initial prompt as `Names and terms: A, B.` The whole prompt is capped at 800 characters (extra terms are dropped with a warning). Nothing is added with `--no-prompt`.

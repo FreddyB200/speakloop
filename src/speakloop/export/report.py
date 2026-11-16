@@ -30,7 +30,7 @@ import re
 import statistics
 from collections.abc import Sequence
 
-from speakloop.models import Evidence, Finding, Metrics, Session
+from speakloop.models import Evidence, Finding, Metrics, Session, Transcript
 
 MAX_FINDINGS = 5
 _MD_SPECIAL = re.compile(r"([\\`*_{}\[\]<>#|~])")
@@ -195,6 +195,24 @@ def _fde_section(metrics: Metrics, show_track: bool) -> str | None:
     return "\n".join(lines).rstrip()
 
 
+def _transcript_callout(transcript: Transcript, show_track: bool) -> str:
+    """Collapsed Obsidian callout (a plain blockquote on GitHub) with one line per segment."""
+    label = escape_markdown(f"{transcript.backend}:{transcript.model}")
+    lines = [f"> [!quote]- Transcript as recognized ({label})"]
+    for segment in sorted(transcript.segments, key=lambda s: s.start):
+        text = escape_markdown(segment.text)
+        if not text:
+            continue
+        who = "*(other speaker)* " if show_track and segment.track == "system" else ""
+        lines.append(f"> **[{format_timestamp(segment.start)}]** {who}{text}")
+    if len(lines) == 1:
+        lines.append("> *(no speech recognized)*")
+    if transcript.prompt:
+        lines.append(f"> *Initial prompt: {escape_markdown(transcript.prompt)}*")
+    # Two trailing spaces force a line break on GitHub (Obsidian breaks lines anyway).
+    return "\n".join(line + "  " for line in lines[:-1]) + "\n" + lines[-1]
+
+
 def _yes_no(value: bool) -> str:
     return "yes" if value else "no"
 
@@ -206,6 +224,7 @@ def render_report(
     *,
     summary: str | None = None,
     next_session_goal: str | None = None,
+    transcript: Transcript | None = None,
 ) -> str:
     """Render the Markdown report of a session."""
     show_track = len(session.tracks) > 1
@@ -231,4 +250,6 @@ def render_report(
         "## Next session goal",
         escape_markdown(next_session_goal) if next_session_goal else "No goal set.",
     ]
+    if transcript is not None:
+        parts += ["## Transcript", _transcript_callout(transcript, show_track)]
     return "\n\n".join(parts) + "\n"
