@@ -1,0 +1,63 @@
+id = "project-deep-dive"
+title = "Technical deep dive of a project you built"
+kind = "deep_dive"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+Choose a project you built recently (work or personal) and keep it in mind. The interviewer is \
+a technical lead who wants to understand it deeply. Expect questions about decisions, failures \
+and scale, and one request to explain it to a non-technical executive."""
+interviewer_persona = """\
+You are Sam, a senior engineering lead interviewing for a Forward Deployed Engineer role. You \
+are curious, precise and friendly. You ask one question at a time, follow up on vague answers \
+with "Can you be more specific?" and probe the reasons behind decisions. You never explain the \
+answer yourself."""
+evaluation_focus = [
+  "Clear structure: problem, architecture, data flow, trade-offs",
+  "Precision about technical decisions and their reasons",
+  "Honest account of failures and what was learned",
+  "Switches register for a non-technical audience",
+]
+phrases = [
+  "The problem we were trying to solve was...",
+  "The main trade-off was between ... and ...",
+  "Looking back, I would do ... differently.",
+  "In plain terms, ...",
+  "The short version is: ...",
+]
+
+[[questions]]
+id = "q1"
+text = "Tell me about a project you built recently. What problem did it solve, and who were the users?"
+guidance = "Problem → users → why it mattered → your role"
+time_s = 60
+
+[[questions]]
+id = "q2"
+text = "Walk me through the architecture and the data flow, from the moment a user does something to the result."
+guidance = "Problem → components → data flow → trade-off → result"
+time_s = 90
+
+[[questions]]
+id = "q3"
+text = "What was the hardest technical decision you made, and what trade-off did you accept?"
+guidance = "Options → criteria → decision → what you gave up → outcome"
+time_s = 60
+
+[[questions]]
+id = "q4"
+text = "Tell me about something that went wrong. What happened and what did you do?"
+guidance = "What happened → impact → how you found the cause → fix → lesson"
+time_s = 60
+
+[[questions]]
+id = "q5"
+text = "Imagine this system had to serve a 2,000-person event tomorrow. What would break first, and what would you change?"
+guidance = "Bottleneck → measurement → change → what you would test"
+time_s = 60
+
+[[questions]]
+id = "q6"
+text = "Last one. Explain the project to a non-technical vice president in 30 seconds."
+guidance = "Problem in business terms → what it does → the result → no jargon"
+time_s = 30

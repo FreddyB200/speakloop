@@ -1,0 +1,63 @@
+id = "pricing-incident"
+title = "Pricing incident with the CFO on the call"
+kind = "pressure"
+pack = "fde"
+difficulty = 3
+candidate_brief = """\
+Yesterday the AI pricing assistant you deployed for a retailer published wrong prices on the \
+website for about two hours. You are now on an urgent call with the CFO. She is upset and she \
+is going to demand a new feature immediately. Stay calm, take responsibility without panicking, \
+and do not promise what you cannot deliver."""
+interviewer_persona = """\
+You are Helen Park, CFO of a large retailer. You are angry, direct and impatient. You interrupt \
+with short sentences. You want a clear answer, a clear owner and a clear date. You calm down a \
+little when the candidate is concrete and honest, and you push harder when you hear vague \
+promises. You demand a "kill switch with an approval workflow" to be built today."""
+evaluation_focus = [
+  "Calm tone, empathy and ownership without blaming others",
+  "Does not over-promise (watch for 'definitely', '100 percent', 'no problem')",
+  "Says what is known, what is unknown and when the next update comes",
+  "Closes with clear next steps and owners",
+]
+phrases = [
+  "Here's what we know, what we don't know yet, and when you'll hear from me next.",
+  "I understand why you're upset, and I take responsibility for fixing it.",
+  "What I can commit to today is a manual approval step.",
+  "That's a great idea; let's scope it as a second phase.",
+]
+
+[[hidden_facts]]
+id = "cause"
+fact = "The wrong prices came from a supplier file with the decimal point in the wrong place. The assistant did not check for outliers before publishing."
+revealed_when = "about the root cause, what exactly happened or how the bad prices got through"
+
+[[hidden_facts]]
+id = "impact"
+fact = "Around 300 orders were placed at the wrong prices, and the loss is estimated at about 40,000 euros."
+revealed_when = "about the impact, the number of affected orders or the financial loss"
+
+[[hidden_facts]]
+id = "approval"
+fact = "A manual approval step already exists in the system but it was switched off three months ago to speed up launches, by the pricing team."
+revealed_when = "about safeguards, approvals, controls or what could have prevented this"
+
+[[hidden_facts]]
+id = "deadline"
+fact = "The board meets on Friday and the CFO needs a written incident summary and a mitigation plan before then."
+revealed_when = "about deadlines, who else needs to know or what the CFO needs from you"
+
+[[questions]]
+id = "q1"
+text = "Do you know what this cost us? Your system published wrong prices on our website. I want a kill switch with a full approval workflow built today. Can you do that?"
+guidance = "Acknowledge → take ownership → what is known and unknown → what you can commit to today → next update time"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "Why should I trust that this will not happen again?"
+guidance = "Cause → immediate mitigation → longer-term fix → how you will show it works"
+
+[[questions]]
+id = "q3"
+text = "Fine. What exactly happens in the next 24 hours, and who is responsible for each step?"
+guidance = "Step → owner → time, in order; end by agreeing the next check-in"

@@ -1,0 +1,62 @@
+id = "slow-responses"
+title = "Nine-second latency in production"
+kind = "pressure"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+You deployed an AI reply-suggestion tool for a customer support team. Responses now take about \
+9 seconds and the human agents are starting to abandon the tool. The support director has called \
+you. Diagnose the problem with questions, keep the customer calm and agree next steps."""
+interviewer_persona = """\
+You are Priya, director of customer support at an online travel company. You are stressed, \
+fast-talking and focused on the agents' experience and your service metrics. You are \
+technical enough to follow a clear explanation. You report symptoms, not causes, and you only \
+share details when asked."""
+evaluation_focus = [
+  "Structured diagnosis through questions",
+  "Explains technical causes in plain language",
+  "Gives a short-term fix and a long-term fix",
+  "Does not promise a specific latency without evidence",
+]
+phrases = [
+  "When did it start, and what changed around that time?",
+  "Here's what we know, what we don't know yet, and when you'll hear from me next.",
+  "In plain terms, the system is waiting for something.",
+  "The short version is: quick fix today, proper fix next week.",
+]
+
+[[hidden_facts]]
+id = "when"
+fact = "It started eight days ago, right after the team added a long customer-history section to every request."
+revealed_when = "about when the slowness started or what changed recently"
+
+[[hidden_facts]]
+id = "peak"
+fact = "It is only slow between 2 and 5 pm, when the call volume is highest. In the morning it takes about 2 seconds."
+revealed_when = "about the pattern, whether it is always slow or depends on the time of day or load"
+
+[[hidden_facts]]
+id = "abandon"
+fact = "Agents who give up on the tool are going back to a shared document of canned replies, and customer satisfaction has dropped by 6 points."
+revealed_when = "about the impact on the agents, the customers or the business metrics"
+
+[[hidden_facts]]
+id = "cheap-fix"
+fact = "The director would accept shorter, less detailed suggestions if they arrive in under 3 seconds."
+revealed_when = "about what is acceptable, what the director would trade off or the target response time"
+
+[[questions]]
+id = "q1"
+text = "Our agents are saying the tool is too slow. It takes around nine seconds to answer. They are starting to ignore it. What is going on?"
+guidance = "Empathy → ask symptoms (when, how often, what changed) → hypotheses → plan"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "Explain it to me in simple terms. Why is it slow?"
+guidance = "Plain-language cause → what you will check → what it means for the agents"
+
+[[questions]]
+id = "q3"
+text = "What can you do this week, and what will take longer?"
+guidance = "Short-term fix → long-term fix → how you will measure improvement"

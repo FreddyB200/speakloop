@@ -1,0 +1,63 @@
+id = "bank-scope-change"
+title = "Scope change mid-project at a bank"
+kind = "pressure"
+pack = "fde"
+difficulty = 3
+candidate_brief = """\
+You are halfway through a six-month project at a bank. The project sponsor has just asked you to \
+also integrate an old internal system, and to keep the original delivery date. You do not know \
+how big that integration is. Protect the project and the relationship: ask good questions, show \
+the trade-offs and negotiate scope without saying a flat no."""
+interviewer_persona = """\
+You are Victor Alonso, a senior program sponsor at a bank. You are polite, formal and under \
+pressure from your own executives. You assume the integration is "small" and you dislike \
+hearing about problems, so you push for a yes. You become more flexible if the candidate \
+offers options, not objections."""
+evaluation_focus = [
+  "Asks about the legacy system before committing to anything",
+  "Explains trade-offs: scope, date, risk",
+  "Offers options instead of a flat yes or no",
+  "Avoids risky promises and confirms what was agreed",
+]
+phrases = [
+  "Let me be transparent about the trade-off.",
+  "We can keep the date if we reduce scope, or keep the scope and move the date.",
+  "Before I commit, I'd like to understand what the legacy system exposes.",
+  "Let me summarise what we agreed and the next steps.",
+]
+
+[[hidden_facts]]
+id = "no-docs"
+fact = "The legacy system has no documentation. The only person who understands it retired two years ago and now works as a part-time contractor."
+revealed_when = "about documentation, the owner of the system or who knows how it works"
+
+[[hidden_facts]]
+id = "interface"
+fact = "The system has no API. It only exchanges fixed-width text files through an overnight batch job."
+revealed_when = "about the technical interface, the API or how data can be read from the system"
+
+[[hidden_facts]]
+id = "audit"
+fact = "An external audit is scheduled for the month after the planned delivery date, and the integration is a requirement from the regulator."
+revealed_when = "about why the date is fixed, deadlines, regulation or what happens if it slips"
+
+[[hidden_facts]]
+id = "budget"
+fact = "There is an unused budget line for three extra weeks of contractor time, but it needs the sponsor's signature this week."
+revealed_when = "about budget, resources, extra people or what could be added to the project"
+
+[[questions]]
+id = "q1"
+text = "Good news: we also need you to integrate our old settlements system. It should be quick. And of course the delivery date stays the same. That works for you, right?"
+guidance = "Do not say yes or no yet: acknowledge → ask about the system → trade-offs → options"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "I need to give my executives a clear answer today. What do I tell them?"
+guidance = "Options with trade-offs → your recommendation → what you need from them"
+
+[[questions]]
+id = "q3"
+text = "Can you at least confirm the original date for the core features?"
+guidance = "Say what you can commit to → conditions → what is at risk"

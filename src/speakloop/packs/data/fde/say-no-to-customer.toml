@@ -1,0 +1,43 @@
+id = "say-no-to-customer"
+title = "A time you had to say no to a customer"
+kind = "behavioral"
+pack = "fde"
+difficulty = 1
+candidate_brief = """\
+Prepare a real example of a time you had to say no to a customer, a stakeholder or a manager \
+while keeping the relationship. Use the STAR structure: Situation, Task, Action, Result."""
+interviewer_persona = """\
+You are Jordan, a hiring manager for a customer-facing engineering team. You are warm, \
+attentive and fond of concrete details. You ask short follow-up questions such as "What did you \
+actually say?" and "How did they react?". You do not give opinions on the answers."""
+evaluation_focus = [
+  "STAR structure with concrete details",
+  "Specific actions in the first person (I, not we)",
+  "Result with evidence, and what was learned",
+  "Tone: respectful and constructive when refusing",
+]
+phrases = [
+  "The situation was...",
+  "My responsibility was to...",
+  "What I did was...",
+  "As a result, ...",
+  "Looking back, what I learned is...",
+]
+
+[[questions]]
+id = "q1"
+text = "Tell me about a time you had to say no to a customer."
+guidance = "Situation → Task → Action → Result"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "What exactly did you say to them, and how did they react?"
+guidance = "Quote your words → their reaction → how you handled it"
+time_s = 45
+
+[[questions]]
+id = "q3"
+text = "Looking back, would you handle it differently today?"
+guidance = "One honest change → why → what you learned"
+time_s = 45

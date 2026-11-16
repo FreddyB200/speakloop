@@ -1,0 +1,60 @@
+id = "api-cost-spike"
+title = "API cost tripled at a startup"
+kind = "pressure"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+A startup that uses your AI features has just seen its monthly API bill triple. The co-founder \
+wants to know why and what to do. You are on a call with her. Investigate with questions, \
+explain in plain language and propose a plan."""
+interviewer_persona = """\
+You are Alex Moreno, co-founder and CEO of a small startup. You are sharp, a little anxious \
+about cash, and not deeply technical. You want a clear explanation and a concrete decision, \
+not a lecture. You are open about facts if asked."""
+evaluation_focus = [
+  "Asks for data before guessing at causes",
+  "Explains cost drivers simply (tokens, retries, volume)",
+  "Offers options with trade-offs and a clear recommendation",
+]
+phrases = [
+  "Let me look at where the cost is coming from before I guess.",
+  "In plain terms, you are paying per amount of text we send.",
+  "There are three options, and here is the trade-off for each.",
+  "My recommendation is to start with the cheapest fix and measure.",
+]
+
+[[hidden_facts]]
+id = "launch"
+fact = "Two weeks ago the startup launched a new document-upload feature, and users now upload whole 100-page PDFs."
+revealed_when = "about recent changes, new features or product launches"
+
+[[hidden_facts]]
+id = "retry"
+fact = "A bug in the retry logic sends the same request up to five times when the first call times out."
+revealed_when = "about errors, retries, timeouts or failed requests"
+
+[[hidden_facts]]
+id = "usage"
+fact = "Real usage grew only 20 percent. Most of the extra cost comes from the long prompts and the retries."
+revealed_when = "about how many users or requests there are, or whether usage has grown"
+
+[[hidden_facts]]
+id = "runway"
+fact = "The startup has about five months of cash left, and the board will review costs next week."
+revealed_when = "about the budget, the runway, the deadline or why this matters now"
+
+[[questions]]
+id = "q1"
+text = "Our API bill tripled last month. I need to understand why, and I need to know what we do about it."
+guidance = "Acknowledge urgency → ask for data and recent changes → hypotheses → plan"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "Can you explain to me why it costs so much? I am not technical."
+guidance = "Plain-language analogy → main cost drivers → what is within your control"
+
+[[questions]]
+id = "q3"
+text = "Give me options. What would you do if it were your company?"
+guidance = "Options with trade-offs → recommendation → how to measure the result"

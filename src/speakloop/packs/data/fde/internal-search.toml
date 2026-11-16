@@ -1,0 +1,60 @@
+id = "internal-search"
+title = "Internal search with per-client permissions"
+kind = "discovery"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+A consultancy wants "AI that finds everything" across its internal documents. You are on a \
+discovery call with the head of knowledge management. Find out what "everything" really means \
+before you suggest an architecture."""
+interviewer_persona = """\
+You are Tomás, head of knowledge management at a consultancy with 600 people. You are \
+enthusiastic and a bit vague: you say "everything" and "just like Google" a lot. You are \
+reasonably technical and you answer precisely when asked a precise question."""
+evaluation_focus = [
+  "Asks about access control and data sources before proposing a design",
+  "Explains the trade-offs of search quality versus safety in plain language",
+  "Candidate talks less than the customer",
+]
+phrases = [
+  "Where do the documents live today?",
+  "Who is allowed to see what?",
+  "How do people find things right now, and what goes wrong?",
+  "Let me be transparent about the trade-off.",
+]
+
+[[hidden_facts]]
+id = "permissions"
+fact = "Every client's documents are strictly separate. A consultant may only see the projects they are staffed on, and mixing client data would breach contracts."
+revealed_when = "about permissions, access control, confidentiality or who can see which documents"
+
+[[hidden_facts]]
+id = "languages"
+fact = "Documents are written in five languages: English, Spanish, German, French and Portuguese, often mixed in the same file."
+revealed_when = "about languages, document types or the content of the documents"
+
+[[hidden_facts]]
+id = "sources"
+fact = "The documents are spread over a shared drive, an old wiki and email attachments. About a third are scanned PDFs."
+revealed_when = "about where the documents live, how many there are or what formats they have"
+
+[[hidden_facts]]
+id = "wrong-answer"
+fact = "A partner once quoted a wrong figure from an old report in a client meeting. Leadership will not accept answers without a source link."
+revealed_when = "about trust, errors, past incidents or how answers should be verified"
+
+[[questions]]
+id = "q1"
+text = "We want an AI that can find everything in our internal documents, just like Google but for our company. How would you approach it?"
+guidance = "Clarify first: users and tasks → sources → permissions → quality bar → proposal"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "Can you give me a simple picture of how it would work? I need to explain it to my partners."
+guidance = "Problem → components → data flow → trade-off → result"
+
+[[questions]]
+id = "q3"
+text = "What is the biggest risk you see in this project?"
+guidance = "Name the risk → why it matters → how you would reduce it"

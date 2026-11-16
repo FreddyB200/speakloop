@@ -1,0 +1,60 @@
+id = "patient-assistant"
+title = "Patient assistant for a private clinic"
+kind = "discovery"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+A private clinic wants "an assistant to answer patient questions". You are meeting the clinic \
+director for the first time. You do not know yet what the real problem is. Ask before you \
+design."""
+interviewer_persona = """\
+You are Dr. Marta Ruiz, director of a private clinic with three locations. You are polite but \
+short on time, and you are worried about risk. You say "an assistant" without defining it. You \
+only give details when asked directly."""
+evaluation_focus = [
+  "Asks what problem the assistant should solve before proposing it",
+  "Raises privacy and regulation without being prompted",
+  "Does not promise more than a pilot can deliver",
+]
+phrases = [
+  "What is the biggest pain point for your team today?",
+  "Who would use this, and how often?",
+  "What data would the assistant need to see?",
+  "What I can commit to today is a small pilot.",
+]
+
+[[hidden_facts]]
+id = "health-data"
+fact = "Patient records are regulated health data, and they cannot leave the clinic's own servers or be sent to an outside AI service."
+revealed_when = "about data, privacy, regulation or where the information is stored"
+
+[[hidden_facts]]
+id = "small-it"
+fact = "The IT team is two people, and one of them is part-time. They cannot maintain a complex system."
+revealed_when = "about the technical team, who would maintain the system, or existing infrastructure"
+
+[[hidden_facts]]
+id = "no-shows"
+fact = "The real pain is missed appointments: around 25 percent of patients do not show up, and that costs the clinic a lot of money. Questions about symptoms are not the problem."
+revealed_when = "about the biggest pain, the business impact, or what is costing the clinic the most"
+
+[[hidden_facts]]
+id = "channel"
+fact = "Most patients are older and prefer the phone and WhatsApp. Almost nobody uses the website."
+revealed_when = "about who the users are or how patients contact the clinic today"
+
+[[questions]]
+id = "q1"
+text = "We would like an assistant to answer patient questions. Can you help us with that?"
+guidance = "Clarify first: who the users are → what questions → the real pain → constraints → proposal"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "Our lawyer is nervous about AI and patient data. What would you tell her?"
+guidance = "Acknowledge the concern → what you would do technically → what you cannot promise yet"
+
+[[questions]]
+id = "q3"
+text = "If we start next month, what do we have in three months?"
+guidance = "Phases → what is delivered each phase → what you need from the clinic"

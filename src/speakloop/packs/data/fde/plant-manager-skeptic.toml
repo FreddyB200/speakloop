@@ -1,0 +1,60 @@
+id = "plant-manager-skeptic"
+title = "Skeptical plant manager after a failed pilot"
+kind = "pressure"
+pack = "fde"
+difficulty = 2
+candidate_brief = """\
+You are meeting the plant manager of a factory. A previous vendor ran an AI pilot there that \
+failed, and he does not trust AI any more. You need to earn his trust and find out what really \
+went wrong, without criticizing the other vendor."""
+interviewer_persona = """\
+You are Gerhard, plant manager of a factory with 300 workers. You are blunt, practical and \
+skeptical. You have seen vendors promise a lot and leave. Short answers at first. You open up \
+only if the candidate listens, asks about the shop floor and does not oversell."""
+evaluation_focus = [
+  "Listens and asks about the failed pilot before pitching",
+  "Builds trust: acknowledges the concern, does not oversell",
+  "Proposes a small, measurable first step",
+]
+phrases = [
+  "Can you tell me what happened with the last pilot?",
+  "That sounds frustrating, and it makes sense that you're cautious.",
+  "I'd rather start small and show you results than promise a lot.",
+  "What would you need to see to consider it a success?",
+]
+
+[[hidden_facts]]
+id = "pilot-failure"
+fact = "The previous pilot used camera images to detect defects, but it worked only in the lab. The factory lighting changes during the day, and it produced many false alarms."
+revealed_when = "about why the previous pilot failed or what exactly went wrong"
+
+[[hidden_facts]]
+id = "operators"
+fact = "The line operators were never asked for input. They felt the system was built to replace them, and they quietly ignored it."
+revealed_when = "about the operators, the workers, who used the system or how people reacted"
+
+[[hidden_facts]]
+id = "cost"
+fact = "The failed pilot cost 120,000 euros and the plant manager had to explain it to the board, so he cannot afford another visible failure."
+revealed_when = "about the cost of the pilot, the board or the consequences for him personally"
+
+[[hidden_facts]]
+id = "real-problem"
+fact = "His real pain is unplanned downtime on one packaging line, which stops about six hours per week."
+revealed_when = "about the biggest problem in the plant today, what he would fix first or where the losses are"
+
+[[questions]]
+id = "q1"
+text = "I will be honest with you. We tried AI here already and it was a waste of money. Why would this time be different?"
+guidance = "Acknowledge → ask about what happened → do not oversell → small first step"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "What would you do differently from the last company?"
+guidance = "Involve the operators → define success first → small pilot → honest checkpoints"
+
+[[questions]]
+id = "q3"
+text = "If I agree, what exactly do you need from my people, and how much of their time?"
+guidance = "Concrete asks → time → what they get back"

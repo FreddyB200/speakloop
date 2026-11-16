@@ -1,0 +1,61 @@
+id = "invoice-extraction"
+title = "Invoice extraction for a logistics company"
+kind = "discovery"
+pack = "fde"
+difficulty = 1
+candidate_brief = """\
+You are a Forward Deployed Engineer on a first call with the operations manager of a mid-size \
+logistics company. All you know is this message from her: "We receive thousands of supplier \
+invoices every month and my team types them into our system by hand. We want to automate it \
+with AI." Understand the real need before you propose anything."""
+interviewer_persona = """\
+You are Dana, operations manager at a logistics company with about 400 employees. You are busy, \
+friendly and practical, and not very technical. You describe the problem in business terms and \
+you answer exactly what you are asked, nothing more."""
+evaluation_focus = [
+  "Clarifying questions before the first proposal",
+  "Candidate talks less than the customer",
+  "Closes with a summary and next steps",
+]
+phrases = [
+  "Can you walk me through how this works today?",
+  "What does success look like for you in three months?",
+  "What happens if we don't solve this?",
+  "Let me make sure I understand the problem.",
+]
+
+[[hidden_facts]]
+id = "scanned"
+fact = "About 40 percent of the invoices arrive as photos or scans of handwritten or stamped paper, not clean PDFs."
+revealed_when = "what format the invoices arrive in, or what the documents look like"
+
+[[hidden_facts]]
+id = "legal"
+fact = "Legal requires a person to review and approve every invoice before it is paid, whatever the system says."
+revealed_when = "about compliance, legal or approval requirements, or whether a human must check the result"
+
+[[hidden_facts]]
+id = "december"
+fact = "The volume triples every December because of the holiday shipping season."
+revealed_when = "about volume, seasonality, peaks or when the system must be ready"
+
+[[hidden_facts]]
+id = "erp"
+fact = "The finance system is an old on-premise ERP that only accepts a nightly CSV import."
+revealed_when = "about the target system, integrations or where the data ends up"
+
+[[questions]]
+id = "q1"
+text = "Thanks for joining. As you know, we type supplier invoices by hand and we would like to automate that with AI. Where would you start?"
+guidance = "Clarify first: today's process → volume and formats → constraints → success metric → only then a proposal"
+time_s = 90
+
+[[questions]]
+id = "q2"
+text = "How would you know that the automation is working well enough for us to trust it?"
+guidance = "Metric → target → how to measure → fallback when it is wrong"
+
+[[questions]]
+id = "q3"
+text = "What would a first pilot look like, and how long would it take?"
+guidance = "Small scope → timeline → what you need from the customer → decision point"
