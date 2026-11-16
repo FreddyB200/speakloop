@@ -4,12 +4,15 @@ Layout under the root (default `~/SpeakLoop`, or `$SPEAKLOOP_HOME`):
 
     sessions/<session_id>/{session,transcript,metrics,findings}.json, report.md and an
     optional audit.json
+    sessions/<session_id>/audio/<track><ext> (stored input audio, optional)
     glossary.txt (optional, one term per line, `#` comments)
 """
 
 import contextlib
 import json
 import os
+import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -20,6 +23,7 @@ from speakloop.models import (
     Finding,
     Metrics,
     Session,
+    TrackId,
     Transcript,
     is_valid_session_id,
 )
@@ -45,6 +49,24 @@ class Workspace:
         if not is_valid_session_id(session_id):
             raise ValueError(f"invalid session id: {session_id!r}")
         return self.sessions_dir / session_id
+
+    def audio_dir(self, session_id: str) -> Path:
+        """Folder holding the stored audio files of a session."""
+        return self.session_dir(session_id) / "audio"
+
+    def save_audio(self, session_id: str, track: TrackId, source: Path) -> Path:
+        """Copy an input audio file into the session; return its path relative to the session.
+
+        The file is named `<track><original extension>` (extension sanitized).
+        """
+        suffix = source.suffix.lower()
+        if not re.fullmatch(r"\.[a-z0-9]{1,8}", suffix):
+            suffix = ""
+        directory = self.audio_dir(session_id)
+        directory.mkdir(parents=True, exist_ok=True)
+        target = directory / f"{track}{suffix}"
+        shutil.copyfile(source, target)
+        return target.relative_to(self.session_dir(session_id))
 
     def report_path(self, session_id: str) -> Path:
         return self.session_dir(session_id) / "report.md"
@@ -125,6 +147,24 @@ class Workspace:
             is_valid_session_id(session_id)
             and (self.session_dir(session_id) / "session.json").is_file()
         )
+
+    @property
+    def config_path(self) -> Path:
+        return self.root / "config.toml"
+
+    def save_glossary(self, terms: list[str]) -> Path:
+        """Write `glossary.txt` atomically, one term per line."""
+        self.root.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(dir=self.root, prefix=".glossary.", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write("".join(f"{t}\n" for t in terms))
+            os.replace(tmp_name, self.glossary_path)
+        except BaseException:
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(tmp_name)
+            raise
+        return self.glossary_path
 
     @property
     def glossary_path(self) -> Path:

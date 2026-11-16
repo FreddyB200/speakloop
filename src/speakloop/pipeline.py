@@ -4,7 +4,7 @@ Every backend is injected, so the whole flow runs in tests without Buzz or Claud
 """
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -111,8 +111,20 @@ def run_session(
     prompt: str | None = DEFAULT_TRANSCRIPTION_PROMPT,
     glossary: Sequence[str] = (),
     now: datetime | None = None,
+    on_step: Callable[[str], None] | None = None,
+    keep_audio: bool = False,
 ) -> SessionResult:
-    """Process one recording and persist the session. See module docstring."""
+    """Process one recording and persist the session. See module docstring.
+
+    `on_step` is called with "transcribing", "analyzing", "auditing" (only when an auditor is
+    given) and "saving". With `keep_audio`, each input file is copied into the session folder
+    and the track's `audio_path` becomes the stored path relative to that folder.
+    """
+
+    def step(name: str) -> None:
+        if on_step is not None:
+            on_step(name)
+
     moment = now if now is not None else datetime.now(UTC)
     session = Session(
         id=new_session_id(moment),
@@ -136,6 +148,7 @@ def run_session(
     if audio_system is not None:
         inputs.append(("system", audio_system))
     parts: list[Transcript] = []
+    step("transcribing")
     for track_id, path in inputs:
         try:
             parts.append(
@@ -151,10 +164,12 @@ def run_session(
             raise PipelineError(f"transcription failed for track {track_id}: {exc}") from exc
     transcript = merge_transcripts(session.id, *parts)
 
+    step("analyzing")
     metrics = compute_metrics(transcript, session)
     audit: AuditResult | None = None
     audit_error: str | None = None
     if auditor is not None:
+        step("auditing")
         try:
             audit = run_audit(transcript, session, metrics, auditor, rubric)
         except AuditBackendError as exc:
@@ -166,6 +181,17 @@ def run_session(
                 )
 
     findings: tuple[Finding, ...] = audit.findings if audit else ()
+    step("saving")
+    if keep_audio:
+        stored = tuple(
+            track.model_copy(
+                update={
+                    "audio_path": workspace.save_audio(session.id, track.id, dict(inputs)[track.id])
+                }
+            )
+            for track in session.tracks
+        )
+        session = session.model_copy(update={"tracks": stored})
     workspace.save_session(session)
     workspace.save_transcript(transcript)
     workspace.save_metrics(metrics)

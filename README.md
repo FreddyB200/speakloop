@@ -94,6 +94,15 @@ uv run speakloop report SESSION_ID --obsidian-dir ~/Vault/SpeakLoop
 
 See `speakloop audit --help` and `speakloop report --help`.
 
+### Web app
+
+```
+uv run speakloop serve            # http://127.0.0.1:8791 (next free port if taken), opens the browser
+uv run speakloop serve --port 9000 --no-open --workspace ~/SpeakLoop
+```
+
+The server is local-only (loopback, Host and Origin checks). It serves the JSON API under `/api` (docs at `/api/docs`) and the built frontend from `web/dist` (build it with `cd web && npm install && npm run build`). `audit --keep-audio` stores the audio in the session folder; the web app always does.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

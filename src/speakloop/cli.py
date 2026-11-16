@@ -3,6 +3,7 @@
 import os
 import shutil
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +22,11 @@ from speakloop.transcribe.buzz import BuzzBackend, resolve_executable
 from speakloop.workspace import Workspace
 
 OBSIDIAN_ENV_VAR = "SPEAKLOOP_OBSIDIAN_DIR"
+
+# Must match speakloop.server.app.DEFAULT_PORT (checked by a test); kept here so that
+# `speakloop --help` does not import the web server.
+DEFAULT_PORT = 8791
+
 
 app = typer.Typer(
     name="speakloop",
@@ -52,29 +58,44 @@ def _check_workspace(workspace: Workspace) -> str | None:
     return None
 
 
+@dataclass(frozen=True)
+class DoctorCheck:
+    name: str
+    ok: bool
+    detail: str
+
+
+def doctor_checks(workspace: Workspace) -> list[DoctorCheck]:
+    """Run the environment checks shared by `speakloop doctor` and `GET /api/doctor`."""
+    checks: list[DoctorCheck] = []
+    claude_path = shutil.which("claude")
+    if claude_path is None:
+        checks.append(
+            DoctorCheck(
+                "claude", False, "NOT FOUND on PATH. Install Claude Code to enable AI audits."
+            )
+        )
+    else:
+        checks.append(DoctorCheck("claude", True, f"found at {claude_path}"))
+    try:
+        checks.append(DoctorCheck("buzz", True, f"found at {resolve_executable()}"))
+    except TranscriptionError as exc:
+        checks.append(DoctorCheck("buzz", False, f"NOT FOUND. {exc}"))
+    problem = _check_workspace(workspace)
+    if problem is None:
+        checks.append(DoctorCheck("workspace", True, f"{workspace.root} is writable"))
+    else:
+        checks.append(DoctorCheck("workspace", False, f"NOT WRITABLE {workspace.root}: {problem}"))
+    return checks
+
+
 @app.command()
 def doctor() -> None:
     """Check that the local environment has what SpeakLoop needs."""
-    ok = True
-    claude_path = shutil.which("claude")
-    if claude_path is None:
-        ok = False
-        typer.echo("claude: NOT FOUND on PATH. Install Claude Code to enable AI audits.")
-    else:
-        typer.echo(f"claude: found at {claude_path}")
-    try:
-        typer.echo(f"buzz: found at {resolve_executable()}")
-    except TranscriptionError as exc:
-        ok = False
-        typer.echo(f"buzz: NOT FOUND. {exc}")
-    workspace = Workspace.default()
-    problem = _check_workspace(workspace)
-    if problem is None:
-        typer.echo(f"workspace: {workspace.root} is writable")
-    else:
-        ok = False
-        typer.echo(f"workspace: NOT WRITABLE {workspace.root}: {problem}")
-    if not ok:
+    checks = doctor_checks(Workspace.default())
+    for check in checks:
+        typer.echo(f"{check.name}: {check.detail}")
+    if not all(check.ok for check in checks):
         raise typer.Exit(code=1)
 
 
@@ -128,6 +149,10 @@ def audit(
     no_audit: Annotated[
         bool, typer.Option("--no-audit", help="Skip the AI audit (transcript and metrics only).")
     ] = False,
+    keep_audio: Annotated[
+        bool,
+        typer.Option("--keep-audio", help="Copy the audio into the session folder."),
+    ] = False,
     workspace_path: Annotated[
         Path | None, typer.Option("--workspace", help="Workspace folder.")
     ] = None,
@@ -168,6 +193,7 @@ def audit(
             language=language,
             prompt=None if no_prompt else DEFAULT_TRANSCRIPTION_PROMPT,
             glossary=terms,
+            keep_audio=keep_audio,
         )
     except (PipelineError, AuditBackendError, TranscriptionError) as exc:
         raise _fail(str(exc)) from exc
@@ -242,3 +268,21 @@ def report(
             typer.echo(f"exported: {export_to_folder(text, session, export_dir, replace=True)}")
         except (OSError, ValueError) as exc:
             raise _fail(f"export failed: {exc}") from exc
+
+
+@app.command()
+def serve(
+    host: Annotated[str, typer.Option("--host", help="Interface to bind.")] = "127.0.0.1",
+    port: Annotated[
+        int, typer.Option("--port", help="Port to listen on (the next free one is used if taken).")
+    ] = DEFAULT_PORT,
+    workspace_path: Annotated[
+        Path | None, typer.Option("--workspace", help="Workspace folder.")
+    ] = None,
+    no_open: Annotated[bool, typer.Option("--no-open", help="Do not open the browser.")] = False,
+) -> None:
+    """Start the local web app (API plus the built frontend) and open it in the browser."""
+    from speakloop.server.app import create_app, run_server
+
+    workspace = Workspace(workspace_path.expanduser()) if workspace_path else Workspace.default()
+    run_server(create_app(workspace), host=host, port=port, open_browser=not no_open)

@@ -238,3 +238,26 @@ def test_audit_error_and_no_audit_persistence(tmp_path: Path) -> None:
     assert saved.summary is None
     skipped = run(tmp_path, workspace=ws)
     assert ws.load_audit(skipped.session.id) is None
+
+
+def test_on_step_and_keep_audio(tmp_path: Path) -> None:
+    audio = tmp_path / "in.m4a"
+    audio.write_bytes(b"abc")
+    steps: list[str] = []
+    ws = Workspace(tmp_path / "ws2")
+    result = run_session(
+        audio,
+        audio_system=None,
+        kind=SessionKind.FREE,
+        scenario_id=None,
+        workspace=ws,
+        transcriber=FakeBackend(words(SPEAKER_TEXT)),
+        auditor=FakeAuditor(canned()),
+        rubric=load_rubric(),
+        on_step=steps.append,
+        keep_audio=True,
+    )
+    assert steps == ["transcribing", "analyzing", "auditing", "saving"]
+    stored = ws.load_session(result.session.id).tracks[0].audio_path
+    assert stored == Path("audio/mic.m4a")
+    assert (ws.session_dir(result.session.id) / "audio" / "mic.m4a").read_bytes() == b"abc"
