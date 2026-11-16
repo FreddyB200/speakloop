@@ -1,0 +1,22 @@
+{
+ "type": "result",
+ "subtype": "success",
+ "is_error": false,
+ "structured_output": {
+  "findings": [
+   {
+    "category": "grammar",
+    "title": "Missing article",
+    "explanation": "x",
+    "suggestion": "the API",
+    "severity": 9,
+    "quotes": [
+     "we call API every hour"
+    ]
+   }
+  ],
+  "first_proposal_quote": "we could add a queue",
+  "summary": "ok",
+  "next_session_goal": "ask more"
+ }
+}

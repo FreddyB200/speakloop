@@ -1,0 +1,96 @@
+# SpeakLoop audit rubric v1.
+# Focus: a non-native speaker (first language Spanish) practicing Forward Deployed Engineer
+# interviews and customer conversations. The loader (speakloop.audit.rubric) validates the shape.
+
+version = "v1"
+max_patterns = 5
+spoken_english_instruction = """\
+The transcript is SPOKEN English produced by automatic speech recognition. Spoken English is \
+not written English: do NOT report contractions, sentence fragments, sentences that start with \
+"And", "So" or "But", self-corrections that end well, informal register, or long sentences that \
+are still clear. Fillers, pauses, pace and repetitions are already measured by code: do not \
+report them unless one specific instance changes the meaning. You cannot hear the audio: never \
+judge pronunciation, and ignore words that look like transcription mistakes. Report recurring \
+PATTERNS (the title names the pattern, not the instance), ranked by their impact on how an \
+interviewer or a customer would perceive the speaker. Severity: 3 = changes the meaning, causes \
+confusion, or sounds unprofessional to a customer; 2 = clearly non-native or breaks the flow; \
+1 = polish. Suggestions give the most natural way a fluent engineer would say it in that \
+context: short and speakable, not written prose. Be specific and kind; never give generic \
+advice such as "practice more"."""
+
+[[categories]]
+name = "grammar"
+description = """Tense and aspect (present perfect vs past simple, e.g. "I work here since 2022" \
+instead of "I've worked here since 2022"), articles, prepositions, subject-verb agreement \
+(dropped third-person -s), question formation, word order, missing subjects \
+("Is important to...", "Depends of...")."""
+
+[[categories]]
+name = "vocabulary"
+description = """Wrong word, collocation errors ("make a question", "explain me", "discuss \
+about", "depend of") and Spanish false friends (actually/actualmente, eventually/eventualmente, \
+realize/realizar, assist/asistir, attend/atender, library/libreria, support/soportar, \
+sensible/sensible). Uncountable nouns used as countable ("informations", "advices", \
+"softwares")."""
+
+[[categories]]
+name = "naturalness"
+description = """Grammatical but unnatural phrasing, often a literal translation from Spanish \
+("I am agree", "more easy", "the people think..." for people in general)."""
+
+[[categories]]
+name = "pronunciation"
+description = """Never used by this text audit: pronunciation cannot be judged from a \
+transcript. A separate audio-based module handles it."""
+
+[[categories]]
+name = "fluency"
+description = """Only abandoned or restarted sentences that hurt clarity. Not fillers or \
+pauses: those are measured by code."""
+
+[[categories]]
+name = "structure"
+description = """Missing answer-first structure, no signposting ("First... then..."), \
+incomplete STAR in behavioral answers (situation, task, action, result), no concrete numbers, \
+unclear "I" versus "we"."""
+
+[[categories]]
+name = "technical_accuracy"
+description = """Incorrect, vague or hand-wavy technical claims, missing trade-offs, \
+assumptions not stated."""
+
+[[categories]]
+name = "customer_judgment"
+description = """Proposing before discovering, over-promising, not acknowledging the customer's \
+problem, no ownership, no clear next steps with owners and times, jargon with a non-technical \
+audience."""
+
+[[fde_dimensions]]
+name = "discovery_before_solution"
+description = """Asks clarifying questions about the real need, constraints and success \
+criteria before proposing anything. In discovery sessions, identify the speaker's exact words \
+where they first proposed a solution (first_proposal_quote)."""
+
+[[fde_dimensions]]
+name = "expectation_management"
+description = """No unqualified commitments; names risks, assumptions and trade-offs; offers \
+phased scope instead of a flat yes or no."""
+
+[[fde_dimensions]]
+name = "ownership_under_pressure"
+description = """In incidents or escalations: acknowledges impact, stays calm, owns the problem, \
+says what is known, what is not yet known and when the customer will hear back."""
+
+[[fde_dimensions]]
+name = "register_adaptation"
+description = """Adapts depth and vocabulary to the audience: precise with engineers, plain \
+language with executives or non-technical stakeholders."""
+
+[[fde_dimensions]]
+name = "thinking_out_loud"
+description = """While reasoning, states assumptions and signposts the plan so the listener can \
+follow."""
+
+[[fde_dimensions]]
+name = "closing"
+description = """Ends with a short summary and clear next steps, with owners and times."""
