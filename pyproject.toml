@@ -42,3 +42,6 @@ plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: opt-in end-to-end tests that need external tools (set SPEAKLOOP_RUN_INTEGRATION=1)",
+]
