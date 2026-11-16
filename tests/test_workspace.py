@@ -79,3 +79,12 @@ def test_atomic_write_keeps_old_file_on_failure(
         ws.save_session(session().model_copy(update={"notes": "changed"}))
     assert (ws.session_dir(SID) / "session.json").read_text() == before
     assert [p.name for p in ws.session_dir(SID).iterdir()] == ["session.json"]
+
+
+def test_save_report_is_atomic_and_overwrites(tmp_path: Path) -> None:
+    ws = Workspace(tmp_path)
+    path = ws.save_report(SID, "one\n")
+    ws.save_report(SID, "two\n")
+    assert path == ws.report_path(SID)
+    assert path.read_text(encoding="utf-8") == "two\n"
+    assert [p.name for p in path.parent.iterdir()] == ["report.md"]

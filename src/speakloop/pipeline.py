@@ -1,0 +1,155 @@
+"""End-to-end session pipeline: transcribe, measure, audit, save and report.
+
+Every backend is injected, so the whole flow runs in tests without Buzz or Claude Code.
+"""
+
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+
+from speakloop.analyze.metrics import compute_metrics
+from speakloop.audit.base import AuditBackend, AuditBackendError
+from speakloop.audit.rubric import Rubric
+from speakloop.audit.run import AuditResult, run_audit
+from speakloop.export.report import render_report
+from speakloop.models import (
+    Finding,
+    Metrics,
+    Session,
+    SessionKind,
+    Track,
+    TrackId,
+    Transcript,
+    new_session_id,
+)
+from speakloop.transcribe.base import TranscriptionBackend, TranscriptionError
+from speakloop.workspace import Workspace
+
+DEFAULT_TRANSCRIPTION_PROMPT = (
+    "Um, uh, er, hmm. Well, you know, I mean, I- I think we, uh, should ask first."
+)
+
+
+class PipelineError(Exception):
+    """A pipeline step failed. The message names the step."""
+
+
+@dataclass(frozen=True)
+class SessionResult:
+    session: Session
+    transcript: Transcript
+    metrics: Metrics
+    findings: tuple[Finding, ...]
+    report_path: Path
+    dropped_quotes: int | None
+    discarded_findings: int | None
+    audit_error: str | None = None
+
+
+def merge_transcripts(session_id: str, *transcripts: Transcript) -> Transcript:
+    """Combine per-track transcripts into one, with segments sorted by start time."""
+    if not transcripts:
+        raise ValueError("at least one transcript is required")
+    segments = sorted((s for t in transcripts for s in t.segments), key=lambda s: s.start)
+    backends = list(dict.fromkeys(t.backend for t in transcripts))
+    models = list(dict.fromkeys(t.model for t in transcripts))
+    language = next((t.language for t in transcripts if t.language is not None), None)
+    prompt = next((t.prompt for t in transcripts if t.prompt is not None), None)
+    return Transcript(
+        session_id=session_id,
+        language=language,
+        backend="+".join(backends),
+        model="+".join(models),
+        prompt=prompt,
+        segments=tuple(segments),
+    )
+
+
+def run_session(
+    audio_mic: Path,
+    *,
+    audio_system: Path | None,
+    kind: SessionKind,
+    scenario_id: str | None,
+    workspace: Workspace,
+    transcriber: TranscriptionBackend,
+    auditor: AuditBackend | None,
+    rubric: Rubric,
+    language: str = "en",
+    prompt: str | None = DEFAULT_TRANSCRIPTION_PROMPT,
+    now: datetime | None = None,
+) -> SessionResult:
+    """Process one recording and persist the session. See module docstring."""
+    moment = now if now is not None else datetime.now(UTC)
+    session = Session(
+        id=new_session_id(moment),
+        created_at=moment,
+        kind=kind,
+        scenario_id=scenario_id,
+        tracks=(
+            Track(id="mic", role="speaker", audio_path=audio_mic),
+            *(
+                (Track(id="system", role="interlocutor", audio_path=audio_system),)
+                if audio_system is not None
+                else ()
+            ),
+        ),
+    )
+
+    inputs: list[tuple[TrackId, Path]] = [("mic", audio_mic)]
+    if audio_system is not None:
+        inputs.append(("system", audio_system))
+    parts: list[Transcript] = []
+    for track_id, path in inputs:
+        try:
+            parts.append(
+                transcriber.transcribe(
+                    path,
+                    track=track_id,
+                    session_id=session.id,
+                    language=language,
+                    prompt=prompt,
+                )
+            )
+        except TranscriptionError as exc:
+            raise PipelineError(f"transcription failed for track {track_id}: {exc}") from exc
+    transcript = merge_transcripts(session.id, *parts)
+
+    metrics = compute_metrics(transcript, session)
+    audit: AuditResult | None = None
+    audit_error: str | None = None
+    if auditor is not None:
+        try:
+            audit = run_audit(transcript, session, metrics, auditor, rubric)
+        except AuditBackendError as exc:
+            audit_error = f"audit failed: {exc}"
+        else:
+            if audit.proposal_time_s is not None:
+                metrics = compute_metrics(
+                    transcript, session, proposal_time_s=audit.proposal_time_s
+                )
+
+    findings: tuple[Finding, ...] = audit.findings if audit else ()
+    workspace.save_session(session)
+    workspace.save_transcript(transcript)
+    workspace.save_metrics(metrics)
+    workspace.save_findings(session.id, list(findings))
+
+    report = render_report(
+        session,
+        metrics,
+        findings,
+        summary=audit.summary if audit else None,
+        next_session_goal=audit.next_session_goal if audit else None,
+    )
+    report_path = workspace.save_report(session.id, report)
+    return SessionResult(
+        session=session,
+        transcript=transcript,
+        metrics=metrics,
+        findings=findings,
+        report_path=report_path,
+        dropped_quotes=audit.dropped_quotes if audit else None,
+        discarded_findings=audit.discarded_findings if audit else None,
+        audit_error=audit_error,
+    )

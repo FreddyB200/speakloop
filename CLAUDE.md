@@ -4,7 +4,7 @@ Guidance for AI agents working on SpeakLoop, a local-first speaking coach. See `
 
 ## Architecture map
 
-`src/speakloop/`: `cli.py` (Typer app), `models.py` (pydantic data contracts), `workspace.py` (session folders of JSON files), `transcribe` (`base.py`: `TranscriptionBackend` protocol), `analyze`, `audit` (`base.py`: `AuditBackend` protocol), `items` (`store.py`: SQLite `ItemStore`), `export`, `practice`, `packs`. JSON Schemas of the models are generated into `docs/schemas/` by `scripts/export_schemas.py` (a test fails if they are stale). The remaining modules are empty placeholders for now. Tests live in `tests/`.
+`src/speakloop/`: `cli.py` (Typer app: `version`, `doctor`, `audit`), `pipeline.py` (`run_session`: transcribe, metrics, audit, save, report, with injected backends), `models.py` (pydantic data contracts), `workspace.py` (session folders of JSON files), `transcribe` (`base.py` protocol, `buzz.py` `BuzzBackend`, `fake.py` `FakeBackend`), `analyze` (`metrics.py`: pure metric functions), `audit` (`base.py` protocol, `claude_code.py` backend, `run.py`, `verify.py` quote verification, `rubric/` and `prompts/` v1), `export` (`report.py` Markdown report, `obsidian.py` folder export), `items` (`store.py`: SQLite `ItemStore`), `practice` and `packs` (empty placeholders). JSON Schemas of the models are generated into `docs/schemas/` by `scripts/export_schemas.py` (a test fails if they are stale). Tests live in `tests/` and never call real Buzz or real `claude`; the `integration` marker is opt-in via `SPEAKLOOP_RUN_INTEGRATION=1`. See `docs/ARCHITECTURE.md` for env vars and design notes.
 
 ## Commands
 
@@ -13,6 +13,8 @@ Guidance for AI agents working on SpeakLoop, a local-first speaking coach. See `
 - `uv run ruff check` and `uv run ruff format --check`: lint and format (use `uv run ruff format` to fix)
 - `uv run mypy src`: strict type check
 - `uv run speakloop --help`: run the CLI
+- `uv run speakloop doctor`: check claude, Buzz and the workspace
+- `uv run speakloop audit session.m4a --kind discovery`: run the pipeline (uses the real Buzz and Claude Code; never from tests)
 
 All of these must pass before a task is done (CI runs the same).
 

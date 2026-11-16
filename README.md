@@ -2,7 +2,7 @@
 
 A local-first speaking coach that turns the mistakes you make while speaking into practice, and measures whether you stop making them.
 
-> **Status: Pre-alpha, not usable yet.** Only the project scaffold exists (a CLI with `version`, `doctor` and an `audit` stub). Everything below describes where the project is going, not what it does today.
+> **Status: Pre-alpha.** Milestone M1 is in progress: `speakloop audit` already runs the transcribe, metrics, AI audit and report pipeline, but the rest (items, Anki, practice modes, recorder) is not built. Expect rough edges. Most of what is described below is where the project is going, not what it does today.
 
 ## The closed loop
 
@@ -74,6 +74,17 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECT
 uv sync
 uv run speakloop doctor
 ```
+
+## Usage (early, macOS)
+
+Requires [Buzz](https://github.com/chidiwilliams/buzz) for local transcription and Claude Code for the AI audit.
+
+```
+uv run speakloop doctor
+uv run speakloop audit session.m4a --kind discovery
+```
+
+`doctor` checks that `claude`, Buzz and the workspace folder (`~/SpeakLoop`, or `$SPEAKLOOP_HOME`) are usable. `audit` writes the session files and a Markdown `report.md` under `sessions/<id>/` and prints a short summary. Useful options: `--system other.m4a` (the other side of the call as a second track), `--no-audit` (transcript and metrics only), `--obsidian-dir PATH` (or `SPEAKLOOP_OBSIDIAN_DIR`) to also copy the report to a folder. See `speakloop audit --help`.
 
 ## License
 

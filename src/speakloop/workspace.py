@@ -40,6 +40,9 @@ class Workspace:
     def report_path(self, session_id: str) -> Path:
         return self.session_dir(session_id) / "report.md"
 
+    def save_report(self, session_id: str, text: str) -> Path:
+        return self._write(session_id, "report.md", text)
+
     def _write(self, session_id: str, name: str, text: str) -> Path:
         directory = self.session_dir(session_id)
         directory.mkdir(parents=True, exist_ok=True)
