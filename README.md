@@ -65,6 +65,8 @@ The first content pack targets Forward Deployed Engineer (FDE) interviews, where
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+An example report, generated from synthetic speech with deliberately planted mistakes: [docs/examples/discovery-synthetic.md](docs/examples/discovery-synthetic.md).
+
 ## Requirements
 
 - Python 3.12 and [uv](https://docs.astral.sh/uv/)
